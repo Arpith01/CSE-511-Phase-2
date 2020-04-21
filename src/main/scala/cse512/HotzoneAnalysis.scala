@@ -19,10 +19,12 @@ object HotzoneAnalysis {
     spark.udf.register("trim",(string : String)=>(string.replace("(", "").replace(")", "")))
     pointDf = spark.sql("select trim(_c5) as _c5 from point")
     pointDf.createOrReplaceTempView("point")
+    print(pointDf)
 
     // Load rectangle data
     val rectangleDf = spark.read.format("com.databricks.spark.csv").option("delimiter","\t").option("header","false").load(rectanglePath);
     rectangleDf.createOrReplaceTempView("rectangle")
+    print(rectangleDf)
 
     // Join two datasets
     spark.udf.register("ST_Contains",(queryRectangle:String, pointString:String)=>(HotzoneUtils.ST_Contains(queryRectangle, pointString)))
@@ -30,8 +32,10 @@ object HotzoneAnalysis {
     joinDf.createOrReplaceTempView("joinResult")
 
     // YOU NEED TO CHANGE THIS PART
+    val sortedJoinDf = spark.sql("select rectangle, count(point) as numPoints from joinResult group by rectangle order by rectangle").persist()
+    sortedJoinDf.createOrReplaceTempView("sortedJoinResult")
 
-    return joinDf // YOU NEED TO CHANGE THIS PART
+    return sortedJoinDf // YOU NEED TO CHANGE THIS PART
   }
 
 }
