@@ -60,9 +60,22 @@ def runHotcellAnalysis(spark: SparkSession, pointPath: String): DataFrame =
   val deviation = math.sqrt(sumSquare / numCells - (mean * mean))
   println(deviation)
   spark.udf.register("st_Neighbors", (x: Double, y: Double, z: Double, x1: Double, y1: Double, z1: Double) => (HotcellUtils.st_Neighbors(x, y, z, x1, y1, z1)))
-  var neighbors = spark.sql("select p1.x,p1.y,p1.z,sum(p2.count) from cellCount as p1, cellCount as p2 where st_Neighbors(p1.x,p1.y,p1.z,p2.x,p2.y,p2.z) group by p1.x,p1.y,p1.z")
+  var neighbors = spark.sql("select p1.x,p1.y,p1.z,sum(p2.count) as neighbors from cellCount as p1, cellCount as p2 where st_Neighbors(p1.x,p1.y,p1.z,p2.x,p2.y,p2.z) group by p1.x,p1.y,p1.z")
   neighbors.show()
   neighbors.createOrReplaceTempView("neighbors")
+
+
+  def g_score(sum:Int): Double =
+  {
+    val numerator = sum-(mean*27)
+    val denominator = deviation * math.sqrt(((numCells*27)-(27*27))/(numCells-1))
+    val score = numerator/denominator
+    return score
+  }
+
+  spark.udf.register("g_score", (sum: Int) => (g_score(sum)))
+  var score = spark.sql("select x, y, z, g_score(neighbors) as gscore from neighbors order by gscore desc")
+  score.show()
   return pickupInfo
 }
 }
