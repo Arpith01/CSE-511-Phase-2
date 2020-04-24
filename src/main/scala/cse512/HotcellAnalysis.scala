@@ -48,8 +48,21 @@ def runHotcellAnalysis(spark: SparkSession, pointPath: String): DataFrame =
   //givenPoints.show()
   pickupInfo = pickupInfo.groupBy("x", "y", "z").count()
   pickupInfo.show()
+  pickupInfo.createOrReplaceTempView("cellCount")
   
+  val sum = spark.sql("select sum(count) from cellCount").first().getLong(0).toDouble
+  println(sum)
+  val mean = sum / numCells.toDouble
+  println(mean)
 
-  return pickupInfo // YOU NEED TO CHANGE THIS PART
+  val sumSquare = spark.sql("select sum(count*count) from cellCount").first().getLong(0).toDouble
+  println(sumSquare)
+  val deviation = math.sqrt(sumSquare / numCells - (mean * mean))
+  println(deviation)
+  spark.udf.register("st_Neighbors", (x: Double, y: Double, z: Double, x1: Double, y1: Double, z1: Double) => (HotcellUtils.st_Neighbors(x, y, z, x1, y1, z1)))
+  var neighbors = spark.sql("select p1.x,p1.y,p1.z,sum(p2.count) from cellCount as p1, cellCount as p2 where st_Neighbors(p1.x,p1.y,p1.z,p2.x,p2.y,p2.z) group by p1.x,p1.y,p1.z")
+  neighbors.show()
+  neighbors.createOrReplaceTempView("neighbors")
+  return pickupInfo
 }
 }

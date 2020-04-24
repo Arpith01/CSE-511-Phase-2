@@ -47,5 +47,11 @@ object HotcellUtils {
     return calendar.get(Calendar.DAY_OF_MONTH)
   }
 
-  // YOU NEED TO CHANGE THIS PART
+  def st_Neighbors(x: Double, y: Double, z: Double, x1: Double, y1: Double, z1: Double): Boolean = {
+
+    if((math.abs(x-x1)<=1) && (math.abs(y-y1)<=1) && (math.abs(z-z1)<=1))
+      return true
+    else
+      return false
+  }
 }
