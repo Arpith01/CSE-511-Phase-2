@@ -4,7 +4,6 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 object HotzoneAnalysis {
-
   Logger.getLogger("org.spark_project").setLevel(Level.WARN)
   Logger.getLogger("org.apache").setLevel(Level.WARN)
   Logger.getLogger("akka").setLevel(Level.WARN)
@@ -31,7 +30,9 @@ object HotzoneAnalysis {
 
     // YOU NEED TO CHANGE THIS PART
 
-    return joinDf // YOU NEED TO CHANGE THIS PART
-  }
+    val hotzoneDF = spark.sql("select joinResult.rectangle, COUNT(joinResult.point) as count from joinResult GROUP BY joinResult.rectangle ORDER BY joinResult.rectangle")
+    hotzoneDF.show()
 
+    return hotzoneDF.coalesce(1)
+  }
 }
