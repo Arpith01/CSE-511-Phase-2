@@ -2,3 +2,12 @@
 /spark-warehouse/
 /target/
 /test/
+.metals/metals.h2.db
+.metals/metals.lock.db
+.metals/metals.log
+.metals/readonly/scala/Double.scala
+.metals/readonly/scala/Symbol.scala
+Others/1.txt
+Others/SELECT SUM(ijk1.count) FROM ijk ijk1, ij.scala
+Others/Untitled-2.scala
+Output/part-00000-7222caf1-7d31-4697-98c4-af8810351615-c000.csv

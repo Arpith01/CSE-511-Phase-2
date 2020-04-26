@@ -48,4 +48,15 @@ object HotcellUtils {
   }
 
   // YOU NEED TO CHANGE THIS PART
+  def GetNeighbourCount(i:Double, mini:Double, maxi:Double, j:Double, minj:Double, maxj:Double, k:Double, mink:Double, maxk:Double): Int = 
+  {
+	var total  = 26
+	if((i==mini || i== maxi) && (j==minj || j== maxj) && (k==mink || k== maxk))
+		total-=19
+	else if(((i==mini || i==maxi) && (j==minj || j==maxj)) || ((i==mini || i==maxi) && (k==mink || k==maxk)) || ((k==mink || k==maxk) &&(j==minj || j==maxj)))
+		total-=15
+	else if((i==mini || i==maxi) || (j==minj || j==maxj) || (k==mink || k==maxk))
+		total-=9
+	return total+1
+  }
 }
