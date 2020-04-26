@@ -48,19 +48,6 @@ def runHotcellAnalysis(spark: SparkSession, pointPath: String): DataFrame =
   var xyzData = spark.sql("select * from pickupInfo where((x >= "+minX+" AND x <= "+maxX+") AND (y >= "+minY+" AND y <= "+maxY+") AND (z >= "+minZ+" AND z <= "+maxZ+"))")
   xyzData.createOrReplaceTempView("xyzData")
 
-  spark.udf.register("Geti", (pointX: Int)=>((
-    HotcellUtils.CalculateWindow(minX.toInt, maxX.toInt, pointX)
-  )))
-    
-  spark.udf.register("Getj", (pointY: Int)=>((
-    HotcellUtils.CalculateWindow(minY.toInt, maxY.toInt, pointY)
-  )))
-
-  spark.udf.register("Getk", (pointZ: Int)=>((
-    HotcellUtils.CalculateWindow(minZ.toInt, maxZ.toInt, pointZ)
-  )))
-
-  // var cellTable = spark.sql("select Geti(xyzData.x) as i,Getj(xyzData.y) as j, Getk(xyzData.z) as k, count(*) as count from xyzData group by i,j,k")
   var cellTable = spark.sql("select x as i, y as j, z as k, count(*) as count from xyzData group by i,j,k")
 
   cellTable.createOrReplaceTempView("ijk")
@@ -77,12 +64,12 @@ def runHotcellAnalysis(spark: SparkSession, pointPath: String): DataFrame =
     HotcellUtils.GetNeighbourCount(i, minX, maxX, j, minY, maxY, k, minZ,maxZ)
   ))
 
-  var neighDF = spark.sql("SELECT ijk1.i, ijk1.j, ijk1.k, ijk1.count as myX, SUM(ijk2.count) as neighxsum, GetWN(ijk1.i, ijk1.j, ijk1.k) as totalneighcount FROM ijk ijk1, ijk ijk2 WHERE ((abs(ijk1.i-ijk2.i)<=1) AND (abs(ijk1.j-ijk2.j)<=1) AND (abs(ijk1.k-ijk2.k)<=1)) GROUP BY ijk1.i, ijk1.j, ijk1.k, ijk1.count")
+  var neighDF = spark.sql("SELECT ijk1.i, ijk1.j, ijk1.k, ijk1.count as myX, SUM(ijk2.count) as neighxsum, count(ijk2.i, ijk2.j, ijk2.k) as totalneighcount FROM ijk ijk1, ijk ijk2 WHERE ((abs(ijk1.i-ijk2.i)<=1) AND (abs(ijk1.j-ijk2.j)<=1) AND (abs(ijk1.k-ijk2.k)<=1)) GROUP BY ijk1.i, ijk1.j, ijk1.k, ijk1.count")
   neighDF.show()
   neighDF.createOrReplaceTempView("semifinal")
 
 
-  var g_valueDF = spark.sql("SELECT semifinal.i, semifinal.j, semifinal.k, ((semifinal.neighxsum -("+mean+"*semifinal.totalneighcount))/("+s_val+"*sqrt((("+numCells.toInt+"*semifinal.totalneighcount)-(semifinal.totalneighcount*semifinal.totalneighcount))/("+numCells.toInt+"-1)))) AS gscore FROM semifinal order by gscore desc")
+  var g_valueDF = spark.sql("SELECT semifinal.i, semifinal.j, semifinal.k FROM semifinal order by ((semifinal.neighxsum -("+mean+"*semifinal.totalneighcount))/("+s_val+"*sqrt((("+numCells.toInt+"*semifinal.totalneighcount)-(semifinal.totalneighcount*semifinal.totalneighcount))/("+numCells.toInt+"-1)))) desc, semifinal.i desc, semifinal.j desc, semifinal.k desc")
   g_valueDF.show()
   
   return g_valueDF
